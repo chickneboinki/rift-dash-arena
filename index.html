@@ -1,0 +1,58 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>RIFT — Browser Build Arena</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700;800;900&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/src/style.css" />
+</head>
+<body>
+  <div id="app">
+    <div class="topline"><div class="brand"><span class="brand-mark">R</span><span>RIFT<span class="brand-dot">/</span>ARENA</span></div><div class="top-right"><span class="online-dot"></span> TRAINING SERVER <span class="divider">|</span> BUILD 0.1.0</div></div>
+    <main id="menu" class="menu-shell">
+      <section class="hero">
+        <div class="eyebrow"><span></span> YOUR ARENA. YOUR RULES.</div>
+        <h1>DROP IN.<br><em>BUILD UP.</em></h1>
+        <p class="hero-copy">A browser-native build and battle playground. Master your edits, sharpen your aim, and own the arena.</p>
+        <div class="menu-actions"><button id="playBtn" class="primary-btn">ENTER THE ARENA <b>↗</b></button><button id="practiceBtn" class="secondary-btn">QUICK PRACTICE</button></div>
+        <div class="hero-meta"><div><strong>06</strong><span>GAME MODES</span></div><div><strong>∞</strong><span>WAYS TO BUILD</span></div><div><strong>01</strong><span>MISSION: IMPROVE</span></div></div>
+      </section>
+      <section class="mode-panel">
+        <div class="panel-heading"><div><span class="eyebrow">SELECT YOUR PLAYLIST</span><h2>CHOOSE A MODE</h2></div><span class="live-tag">● LIVE</span></div>
+        <div class="mode-grid">
+          <button class="mode-card selected" data-mode="Free Play"><span class="mode-icon">⌖</span><span class="mode-name">FREE PLAY</span><small>Warm up at your pace</small><i>↗</i></button>
+          <button class="mode-card" data-mode="Creative"><span class="mode-icon">▧</span><span class="mode-name">CREATIVE</span><small>Build without limits</small><i>↗</i></button>
+          <button class="mode-card" data-mode="1v1"><span class="mode-icon">⚔</span><span class="mode-name">1 V 1</span><small>One opponent. No excuses.</small><i>↗</i></button>
+          <button class="mode-card" data-mode="2v2"><span class="mode-icon">♟</span><span class="mode-name">2 V 2</span><small>Squad up and outbuild</small><i>↗</i></button>
+          <button class="mode-card" data-mode="Box Fights"><span class="mode-icon">▦</span><span class="mode-name">BOX FIGHTS</span><small>Close-range mechanics</small><i>↗</i></button>
+          <button class="mode-card" data-mode="Zone Wars"><span class="mode-icon">◉</span><span class="mode-name">ZONE WARS</span><small>Fight your way to safety</small><i>↗</i></button>
+        </div>
+        <div class="panel-foot"><span>MORE PLAYLISTS IN DEVELOPMENT</span><span>RIFT // 001</span></div>
+      </section>
+    </main>
+    <section id="game" class="game hidden">
+      <canvas id="world"></canvas>
+      <div class="hud-top"><div class="hud-pill"><span class="online-dot"></span><span id="modeLabel">FREE PLAY</span></div><div class="hud-pill">ELIMS <b id="elims">0</b></div><div class="hud-pill">FPS <b id="fps">60</b></div><button id="settingsBtn" class="hud-button">⚙ SETTINGS</button><button id="leaveBtn" class="hud-button">EXIT ↗</button></div>
+      <div class="crosshair">+</div>
+      <div class="hud-bottom-left"><div class="health-label">SHIELD <b>100</b></div><div class="bar"><i></i></div><div class="health-label">HEALTH <b id="healthNum">100</b></div><div class="bar health"><i id="healthBar"></i></div></div>
+      <div class="build-hud"><span>BUILD</span><b>Q</b><b>F</b><b>C</b><b>V</b><small>WALL · FLOOR · RAMP · ROOF</small></div>
+      <div class="weapon-hud"><span>01</span><b>RANGER</b><small>∞ AMMO</small></div>
+      <div id="hint" class="center-hint">CLICK TO LOCK MOUSE · WASD MOVE · SPACE JUMP · LEFT CLICK FIRE</div>
+      <div id="settings" class="settings-overlay hidden"><div class="settings-box"><div class="settings-head"><div><span class="eyebrow">RIFT CONTROL</span><h2>GAME SETTINGS</h2></div><button id="closeSettings">✕</button></div>
+        <label>LOOK SENSITIVITY <output id="sensOut">1.0x</output><input id="sensitivity" type="range" min=".3" max="2.5" step=".1" value="1"></label>
+        <label>GRAPHICS QUALITY<select id="quality"><option>Low</option><option selected>High</option><option>Ultra</option></select></label>
+        <label>FIELD OF VIEW <output id="fovOut">90°</output><input id="fov" type="range" min="70" max="110" value="90"></label>
+        <label class="check-row"><span>EDIT ON RELEASE</span><input id="editRelease" type="checkbox" checked></label>
+        <label class="check-row"><span>PERFORMANCE MODE</span><input id="perfMode" type="checkbox"></label>
+        <div class="keybinds"><b>KEYBINDS</b><span>WASD <small>MOVE</small></span><span>Q / F / C / V <small>BUILD</small></span><span>G <small>EDIT / RESET</small></span><span>R <small>RELOAD (SOON)</small></span><span>ESC <small>PAUSE</small></span></div>
+        <button id="resumeBtn" class="primary-btn full">RESUME MATCH</button>
+      </div></div>
+    </section>
+    <div id="toast" class="toast"></div>
+  </div>
+  <script type="module" src="/src/main.js"></script>
+</body>
+</html>
