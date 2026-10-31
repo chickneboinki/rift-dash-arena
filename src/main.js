@@ -3,7 +3,24 @@ import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import * as SkeletonUtils from 'three/addons/utils/SkeletonUtils.js';
 const $=id=>document.getElementById(id),menu=$('menu'),game=$('game'),canvas=$('world');
 let selectedMode='Free Play',selectedSkin=localStorage.getItem('rift-skin')||'bone',renderer,scene,camera,clock,player,playerModel,weapon,yaw=0,pitch=-.08,keys={},velocityY=0,grounded=true,sensitivity=1,health=100,elims=0,bots=[],buildItems=[],buildGhost=null,buildType='WALL',buildMode=false,buildRotation=0,buildMaterialIndex=0,pointerLocked=false,gameStarted=false,lastFrame=performance.now(),frameCount=0,quality='High',performanceMode=false,characterAsset=null,characterLoadPromise=null;
-const SKINS={bone:{name:'BONE REVENANT',body:0x333a43,accent:0xd8d9d4,skin:0xd9d8d1,style:'skull'},gilded:{name:'GILDED SENTINEL',body:0x80601e,accent:0xffd45a,skin:0xb98759,style:'gold'},arctic:{name:'ARCTIC STRIKE',body:0x536d80,accent:0xbfe8f3,skin:0xc99b7d,style:'arctic'},neon:{name:'NEON PHANTOM',body:0x28233e,accent:0xd75bff,skin:0xb98772,style:'neon'}};
+const SKINS={
+ bone:{name:'BONE REVENANT',body:0x333a43,accent:0xd8d9d4,skin:0xd9d8d1,style:'skull'},
+ gilded:{name:'GILDED SENTINEL',body:0x80601e,accent:0xffd45a,skin:0xb98759,style:'gold'},
+ arctic:{name:'ARCTIC STRIKE',body:0x536d80,accent:0xbfe8f3,skin:0xc99b7d,style:'arctic'},
+ neon:{name:'NEON PHANTOM',body:0x28233e,accent:0xd75bff,skin:0xb98772,style:'neon'},
+ vanguard:{name:'VANGUARD',body:0x263446,accent:0xf2b544,skin:0xb98772,style:'standard'},
+ pathfinder:{name:'PATHFINDER',body:0x315d52,accent:0x7de0c0,skin:0xb98772,style:'standard'},
+ specter:{name:'SPECTER',body:0x191d2b,accent:0x9c7cff,skin:0xb98772,style:'neon'},
+ striker:{name:'STRIKER',body:0x5b2d2d,accent:0xff6b55,skin:0xb98772,style:'standard'},
+ warden:{name:'WARDEN',body:0x4b5142,accent:0xd6e890,skin:0xb98772,style:'arctic'},
+ nova:{name:'NOVA',body:0x3d2a58,accent:0x66d8ff,skin:0xb98772,style:'neon'},
+ seraph:{name:'SERAPH',body:0x8d8468,accent:0xffe9b0,skin:0xb98772,style:'gold'},
+ corsair:{name:'CORSAIR',body:0x1f5f66,accent:0x53e0d8,skin:0xb98772,style:'arctic'},
+ vesper:{name:'VESPER',body:0x5e2438,accent:0xff9ec2,skin:0xb98772,style:'neon'},
+ dragoon:{name:'DRAGOON',body:0x4c5230,accent:0xff9d3c,skin:0xb98772,style:'gold'},
+ tempest:{name:'TEMPEST',body:0x2e4a6b,accent:0xffd23c,skin:0xb98772,style:'standard'},
+ reaper:{name:'REAPER',body:0x1c1c20,accent:0xe84040,skin:0xb98772,style:'skull'}
+};
 document.querySelectorAll('.skin-card').forEach(card=>{if(card.dataset.skin===selectedSkin)card.classList.add('selected');card.addEventListener('click',()=>selectSkin(card.dataset.skin));});
 function makeRigCharacter(skinId){
  if(!characterAsset)return null;
@@ -334,7 +351,7 @@ function initWorld(){
 function onResize(){if(!renderer)return;camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix();renderer.setSize(innerWidth,innerHeight);}
 function updateCamera(){const target=player.position.clone().add(V(0,1.35,0)),d=5.4,h=Math.cos(pitch)*d;camera.position.set(target.x+Math.sin(yaw)*h,target.y+Math.sin(pitch)*d+1.1,target.z+Math.cos(yaw)*h);camera.lookAt(target.clone().add(V(-Math.sin(yaw)*3,Math.sin(pitch)*3,-Math.cos(yaw)*3)));}
 function modeBotCount(){return ({'Creative':0,'1v1':1,'2v2':3,'Box Fights':3,'Zone Wars':5,'Free Play':7})[selectedMode]??5;}
-function spawnBots(n){const palette=[[0x9a4f42,0xffb46b,0xb98262,'standard'],[0x314f79,0x79c9ed,0xb98262,'standard'],[0x66517e,0xd6a4ed,0x9a694e,'skull'],[0x6c7542,0xd6e66e,0x9b765e,'arctic'],[0x80601e,0xffd45a,0xb98759,'gold'],[0x26343b,0x8ce5ec,0xc99b7d,'neon']];for(let i=0;i<n;i++){const [body,accent,skin,style]=palette[i%palette.length],bot=new THREE.Group(),skinId=['bone','arctic','neon','gilded'][i%4],model=makeRigCharacter(skinId)||makeCharacter(body,accent,skin,style);bot.add(model);const bx=player.position.x+(Math.random()-.5)*42,bz=player.position.z-12-Math.random()*35;bot.position.set(bx,terrainHeight(bx,bz)+.25,bz);bot.userData={hp:100,phase:Math.random()*6,model,skinId};scene.add(bot);bots.push(bot);}}
+function spawnBots(n){const palette=[[0x9a4f42,0xffb46b,0xb98262,'standard'],[0x314f79,0x79c9ed,0xb98262,'standard'],[0x66517e,0xd6a4ed,0x9a694e,'skull'],[0x6c7542,0xd6e66e,0x9b765e,'arctic'],[0x80601e,0xffd45a,0xb98759,'gold'],[0x26343b,0x8ce5ec,0xc99b7d,'neon']];for(let i=0;i<n;i++){const [body,accent,skin,style]=palette[i%palette.length],bot=new THREE.Group(),skinId=Object.keys(SKINS)[i%Object.keys(SKINS).length],model=makeRigCharacter(skinId)||makeCharacter(body,accent,skin,style);bot.add(model);const bx=player.position.x+(Math.random()-.5)*42,bz=player.position.z-12-Math.random()*35;bot.position.set(bx,terrainHeight(bx,bz)+.25,bz);bot.userData={hp:100,phase:Math.random()*6,model,skinId};scene.add(bot);bots.push(bot);}}
 function resetArena(){clearBuildGhost();buildMode=false;buildRotation=0;player.position.set(-5,terrainHeight(-5,8)+.25,8);yaw=0;pitch=-.08;velocityY=0;health=100;$('healthNum').textContent='100';$('healthBar').style.width='100%';elims=0;$('elims').textContent='0';buildItems.forEach(o=>scene.remove(o));buildItems=[];bots.forEach(b=>scene.remove(b));bots=[];spawnBots(modeBotCount());}
 const BUILD_MATERIALS=[{id:'wood',name:'WOOD',color:0x95613b,hp:150,metalness:.02,roughness:.86},{id:'stone',name:'STONE',color:0x899197,hp:300,metalness:.12,roughness:.9},{id:'metal',name:'METAL',color:0x647d8b,hp:450,metalness:.72,roughness:.34}];
 function buildMaterial(){const spec=BUILD_MATERIALS[buildMaterialIndex];return material(spec.color,spec.roughness,spec.metalness,{side:THREE.DoubleSide});}
