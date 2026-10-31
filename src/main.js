@@ -22,25 +22,117 @@ function startGame(quick){menu.classList.add('hidden');game.classList.remove('hi
 function leaveGame(){if(document.pointerLockElement)document.exitPointerLock();game.classList.add('hidden');menu.classList.remove('hidden');}
 function setQuality(v){quality=v;if(renderer){renderer.shadowMap.enabled=v!=='Low';renderer.setPixelRatio(performanceMode?1:Math.min(devicePixelRatio,v==='Ultra'?2:v==='High'?1.5:1));}toast(v+' graphics quality');}
 function makeCharacter(primary,accent,skin=0xd5a27f,style='standard'){
- const root=new THREE.Group(),cloth=material(primary,.82),trim=material(accent,.52,.12),dark=material(0x202832,.72),skinMat=material(skin,.78),boot=material(0x171d25,.6,.08);
- for(const s of [-1,1]){const x=s*.19;capsule(root,.115,.48,V(x,.53,0),dark);capsule(root,.13,.28,V(x,.25,.015),boot);box(root,[.28,.14,.38],[x,.12,.07],boot);
- const shoulder=V(s*.39,1.34,0),elbow=V(s*.48,.98,.03),wrist=V(s*.45,.76,.14);capsule(root,.15,.25,shoulder,trim);rod(root,shoulder,elbow,.105,cloth);capsule(root,.095,.2,elbow,dark);rod(root,elbow,wrist,.085,cloth);capsule(root,.095,.1,wrist,skinMat);box(root,[.13,.1,.12],[s*.45,.7,.15],dark);}
- capsule(root,.285,.48,V(0,1.08,0),cloth);box(root,[.48,.46,.18],[0,1.12,.16],trim);box(root,[.18,.26,.045],[0,1.13,.265],dark);
- for(const s of [-1,1])box(root,[.12,.18,.045],[s*.14,1.17,.27],material(0x82929b,.48,.22));
- box(root,[.54,.09,.24],[0,.83,0],dark);for(let i=0;i<3;i++)box(root,[.1,.13,.06],[-.16+i*.16,.82,.15],trim);
- capsule(root,.09,.1,V(0,1.43,0),skinMat);const head=new THREE.Mesh(new THREE.SphereGeometry(.19,18,14),skinMat);head.position.set(0,1.62,0);head.castShadow=true;root.add(head);
- if(style==='skull'){
-   const bone=material(0xe7e5d9,.85),socket=material(0x10151b,.95),eye=material(0xff4c3d,.25,.1,{emissive:0xff1d12,emissiveIntensity:1.2});
-   const mask=new THREE.Mesh(new THREE.SphereGeometry(.195,18,14),bone);mask.position.set(0,1.62,.055);mask.scale.set(1,.92,.78);root.add(mask);
-   for(const s of [-1,1]){const eyeSocket=new THREE.Mesh(new THREE.SphereGeometry(.052,12,10),socket);eyeSocket.position.set(s*.075,1.66,.206);root.add(eyeSocket);const glowEye=new THREE.Mesh(new THREE.SphereGeometry(.018,8,8),eye);glowEye.position.set(s*.075,1.66,.25);root.add(glowEye);}
-   box(root,[.11,.035,.035],[0,1.56,.22],socket);for(let i=0;i<4;i++)box(root,[.018,.045,.018],[-.045+i*.03,1.535,.235],bone);
-   const hood=new THREE.Mesh(new THREE.SphereGeometry(.22,16,12,0,Math.PI*2,0,Math.PI*.62),trim);hood.position.set(0,1.69,-.025);root.add(hood);
- }else{
-   const helmet=new THREE.Mesh(new THREE.SphereGeometry(.205,18,12,0,Math.PI*2,0,Math.PI*.62),trim);helmet.position.set(0,1.68,-.015);helmet.castShadow=true;root.add(helmet);
-   box(root,[.27,.075,.19],[0,1.58,.12],dark);box(root,[.22,.045,.035],[0,1.61,.225],material(0x9be8f1,.25,.45,{emissive:0x17404b,emissiveIntensity:.5}));
-   if(style==='gold'){box(root,[.52,.07,.22],[0,1.39,0],trim);box(root,[.12,.28,.08],[-.31,1.22,.02],trim);box(root,[.12,.28,.08],[.31,1.22,.02],trim);}
+ const root=new THREE.Group();
+ const cloth=material(primary,.78),trim=material(accent,.42,.28),dark=material(0x18212a,.72,.12),rubber=material(0x10161c,.94),skinMat=material(skin,.78),metal=material(0x89979b,.34,.72),glow=material(0x8ce5ec,.22,.5,{emissive:0x236b78,emissiveIntensity:.55});
+ const bone=material(0xe8e4d7,.88),socket=material(0x11171c,.96),accentDark=material(0x303c43,.68,.2);
+ const sphere=(parent,r,pos,mat,scale=[1,1,1],detail=16)=>{const m=new THREE.Mesh(new THREE.SphereGeometry(r,detail,12),mat);m.position.copy(pos);m.scale.set(...scale);m.castShadow=true;m.receiveShadow=true;parent.add(m);return m;};
+ const panel=(size,pos,mat,bevel=.035)=>{const m=box(root,size,pos,mat);return m;};
+ // Boots, shin armor, knee caps and articulated legs.
+ for(const s of [-1,1]){
+  const x=s*.2;
+  box(root,[.31,.13,.43],[x,.105,.09],rubber);
+  box(root,[.29,.11,.35],[x,.19,.035],dark);
+  capsule(root,.135,.34,V(x,.43,0),cloth);
+  box(root,[.29,.27,.16],[x,.47,.12],dark);
+  sphere(root,.16,V(x,.67,.12),trim,[1,.72,.5]);
+  box(root,[.31,.13,.22],[x,.68,.035],accentDark);
+  box(root,[.25,.22,.11],[x,.37,.13],trim);
+  box(root,[.075,.29,.1],[x+s*.09,.39,.19],metal);
+  // Boot tongue, toe cap and ankle cuff.
+  box(root,[.22,.055,.24],[x,.24,.22],trim);
+  box(root,[.27,.09,.18],[x,.13,.2],dark);
  }
- box(root,[.2,.36,.13],[0,1.08,-.19],dark);box(root,[.25,.16,.08],[0,1.24,-.25],trim);return root;
+ // Pelvis, belt, waist rig and layered torso armor.
+ capsule(root,.29,.24,V(0,.84,0),dark);
+ box(root,[.66,.15,.34],[0,.84,.015],trim);
+ box(root,[.23,.16,.07],[0,.84,.205],metal);
+ for(const s of [-1,1]){
+  box(root,[.19,.19,.16],[s*.31,.83,.04],dark);
+  box(root,[.15,.2,.13],[s*.33,.82,.14],trim);
+  box(root,[.13,.19,.12],[s*.39,.72,-.015],accentDark);
+ }
+ capsule(root,.31,.43,V(0,1.13,0),cloth);
+ // Segmented chest plate with raised center, ribs and shoulder straps.
+ box(root,[.56,.48,.2],[0,1.16,.15],trim);
+ box(root,[.38,.32,.075],[0,1.17,.265],cloth);
+ box(root,[.16,.29,.045],[0,1.17,.315],dark);
+ for(let row=0;row<3;row++)for(const s of [-1,1]){
+  box(root,[.13,.075,.035],[s*(.115+row*.012),1.27-row*.105,.31],row===1?metal:accentDark);
+ }
+ for(const s of [-1,1]){
+  const strap=box(root,[.09,.52,.065],[s*.22,1.18,.255],dark);strap.rotation.z=s*.23;
+  box(root,[.12,.12,.07],[s*.22,1.29,.3],metal);
+ }
+ // Shoulder pauldrons and articulated arms.
+ for(const s of [-1,1]){
+  sphere(root,.19,V(s*.43,1.38,0),trim,[1.15,.83,1.05]);
+  box(root,[.31,.12,.25],[s*.44,1.49,0],metal);
+  capsule(root,.12,.27,V(s*.48,1.13,.015),cloth);
+  sphere(root,.13,V(s*.49,.99,.04),dark,[1,.9,.9]);
+  capsule(root,.095,.27,V(s*.48,.82,.1),cloth);
+  box(root,[.23,.22,.12],[s*.48,.83,.17],trim);
+  box(root,[.17,.13,.13],[s*.48,.69,.13],dark);
+  capsule(root,.105,.11,V(s*.48,.66,.13),rubber);
+  // Forearm bracer with metal ridge and glove knuckle plates.
+  box(root,[.22,.28,.16],[s*.48,.84,.19],accentDark);
+  box(root,[.2,.075,.18],[s*.48,.94,.2],metal);
+  box(root,[.2,.075,.18],[s*.48,.74,.2],trim);
+  box(root,[.2,.11,.18],[s*.48,.62,.18],dark);
+  for(let f=0;f<4;f++)box(root,[.035,.07,.045],[s*.48-.075+f*.05,.58,.25],rubber);
+  // Side utility pouches and holster.
+  box(root,[.16,.19,.13],[s*.39,.92,-.13],dark);
+  box(root,[.12,.1,.035],[s*.39,.94,-.055],metal);
+ }
+ // Neck seal and head with a custom helmet/mask silhouette.
+ capsule(root,.12,.16,V(0,1.47,0),dark);
+ sphere(root,.19,V(0,1.68,0),skinMat,[.9,1.12,.86],20);
+ // Helmet shell, crown, brow, ear guards and rear neck protection.
+ sphere(root,.225,V(0,1.79,-.015),style==='skull'?dark:trim,[1.05,.78,1.05],20);
+ box(root,[.4,.07,.29],[0,1.78,.11],dark);
+ for(const s of [-1,1]){
+  box(root,[.095,.22,.19],[s*.205,1.68,-.015],metal);
+  sphere(root,.07,V(s*.22,1.69,.055),glow,[.6,1,.45]);
+ }
+ box(root,[.36,.12,.19],[0,1.54,-.08],dark);
+ if(style==='skull'){
+  // Bone faceplate, deep sockets, glowing eyes, nasal cavity and segmented teeth.
+  sphere(root,.177,V(0,1.66,.12),bone,[1,.92,.68],20);
+  for(const s of [-1,1]){
+   sphere(root,.061,V(s*.073,1.69,.229),socket,[1,.92,.45]);
+   sphere(root,.023,V(s*.073,1.69,.251),glow,[1,1,.6],12);
+   box(root,[.035,.085,.025],[s*.13,1.59,.205],socket);
+  }
+  box(root,[.045,.065,.035],[0,1.615,.224],socket);
+  box(root,[.16,.055,.045],[0,1.555,.195],socket);
+  for(let i=0;i<5;i++)box(root,[.022,.045,.025],[-.055+i*.027,1.545,.22],bone);
+  sphere(root,.23,V(0,1.84,-.035),trim,[1.1,.58,1.12]);
+ }else{
+  // Sealed visor with a bright horizontal lens and reinforced jaw.
+  box(root,[.31,.12,.09],[0,1.7,.205],glow);
+  box(root,[.34,.055,.075],[0,1.76,.19],metal);
+  box(root,[.25,.11,.12],[0,1.57,.13],dark);
+  for(const s of [-1,1])box(root,[.08,.18,.08],[s*.16,1.59,.16],trim);
+ }
+ // Back-mounted pack, canisters, straps and equipment silhouette.
+ box(root,[.42,.48,.2],[0,1.12,-.235],dark);
+ box(root,[.34,.32,.09],[0,1.18,-.36],trim);
+ box(root,[.24,.2,.07],[0,1.18,-.42],accentDark);
+ for(const s of [-1,1]){
+  box(root,[.12,.28,.13],[s*.28,1.2,-.22],metal);
+  const can=new THREE.Mesh(new THREE.CylinderGeometry(.055,.055,.3,10),trim);can.position.set(s*.29,1.05,-.27);can.castShadow=true;root.add(can);
+  box(root,[.07,.37,.06],[s*.18,1.17,-.14],metal);
+ }
+ box(root,[.25,.07,.08],[0,.94,-.34],metal);
+ // Style-specific armor crests and trim, keeping silhouettes distinguishable.
+ if(style==='gold'){
+  const crest=new THREE.Mesh(new THREE.ConeGeometry(.12,.28,5),metal);crest.position.set(0,1.98,-.005);crest.rotation.z=Math.PI;root.add(crest);
+  box(root,[.7,.09,.24],[0,1.42,0],metal);
+  for(const s of [-1,1])box(root,[.13,.3,.14],[s*.43,1.31,0],metal);
+ }else if(style==='standard'){
+  box(root,[.12,.22,.055],[0,1.36,.29],glow);
+ }
+ root.traverse(o=>{if(o.isMesh){o.castShadow=true;o.receiveShadow=true;}});
+ return root;
 }
 function makeRifle(parent){
  const g=new THREE.Group(),metal=material(0x252d35,.34,.78),dark=material(0x11171d,.42,.42),steel=material(0x8fa1a7,.32,.6),glow=material(0x9bdce4,.25,.5,{emissive:0x1b5961,emissiveIntensity:.65});
