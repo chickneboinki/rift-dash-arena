@@ -2,11 +2,10 @@
 
 ## Xo Beta character asset
 
-The SWAT modular character model is loaded from the public Xo Beta repository:
+The SWAT modular character model, male/female base characters, and Universal Animation Library are loaded from the public Xo Beta repository:
 https://github.com/TKY-27/Xo-Beta
 
-The upstream Xo Beta asset manifest identifies the SWAT modular character as
-Quaternius Ultimate Modular Characters, licensed CC0 1.0. The model is used as
+The upstream Xo Beta asset manifest identifies the SWAT modular character and male/female base characters as Quaternius Universal Modular Characters / Universal Base Characters, licensed CC0 1.0. The Universal Animation Library is also Quaternius CC0 1.0 and contains 43 clips. The model is used as
 an independently authored game character and recolored by RIFT ARENA. The
 upstream Xo Beta source code is MIT licensed; this project does not copy its
 game engine or matchmaking implementation.
