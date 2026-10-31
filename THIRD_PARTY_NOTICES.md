@@ -44,6 +44,6 @@ SOFTWARE.
 https://github.com/Hazzad123/fully-ai-arena-fps
 
 Its README identifies its bundled Quaternius Toon Shooter Game Kit models as
-CC0 1.0 and its source as MIT. The FPS repository's character and weapon files
-are not currently loaded by this RIFT build; no claim is made that they have
-been integrated.
+CC0 1.0 and its source as MIT. The FPS repository's Quaternius soldier GLTF is loaded at runtime as a
+secondary bot archetype when the upstream asset and its referenced buffers are
+available. The weapon models from that repository are not yet integrated.
