@@ -2,7 +2,7 @@ import * as THREE from 'three';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import * as SkeletonUtils from 'three/addons/utils/SkeletonUtils.js';
 const $=id=>document.getElementById(id),menu=$('menu'),game=$('game'),canvas=$('world');
-let selectedMode='Free Play',selectedSkin=localStorage.getItem('rift-skin')||'bone',renderer,scene,camera,clock,player,playerModel,weapon,yaw=0,pitch=-.08,keys={},velocityY=0,grounded=true,sensitivity=1,health=100,elims=0,bots=[],buildItems=[],buildGhost=null,buildType='WALL',buildMode=false,buildRotation=0,buildMaterialIndex=0,pointerLocked=false,gameStarted=false,lastFrame=performance.now(),frameCount=0,quality='High',performanceMode=false,characterAsset=null,soldierAsset=null,characterLoadPromise=null;
+let selectedMode='Free Play',selectedSkin=localStorage.getItem('rift-skin')||'bone',renderer,scene,camera,clock,player,playerModel,weapon,yaw=0,pitch=-.08,keys={},velocityY=0,grounded=true,sensitivity=1,health=100,elims=0,bots=[],buildItems=[],buildGhost=null,buildType='WALL',buildMode=false,buildRotation=0,buildMaterialIndex=0,pointerLocked=false,gameStarted=false,lastFrame=performance.now(),frameCount=0,quality='High',performanceMode=false,characterAsset=null,soldierAsset=null,maleBaseAsset=null,femaleBaseAsset=null,ualAnimationAsset=null,characterLoadPromise=null;
 const SKINS={
  bone:{name:'BONE REVENANT',body:0x333a43,accent:0xd8d9d4,skin:0xd9d8d1,style:'skull'},
  gilded:{name:'GILDED SENTINEL',body:0x80601e,accent:0xffd45a,skin:0xb98759,style:'gold'},
@@ -22,15 +22,17 @@ const SKINS={
  reaper:{name:'REAPER',body:0x1c1c20,accent:0xe84040,skin:0xb98772,style:'skull'}
 };
 document.querySelectorAll('.skin-card').forEach(card=>{if(card.dataset.skin===selectedSkin)card.classList.add('selected');card.addEventListener('click',()=>selectSkin(card.dataset.skin));});
-function makeRigCharacter(skinId){
- if(!characterAsset)return null;
- const spec=SKINS[skinId]||SKINS.bone,root=SkeletonUtils.clone(characterAsset.scene);
+function makeRigCharacter(skinId,forcedAsset=null){
+ const spec=SKINS[skinId]||SKINS.bone,baseAsset=spec.female?femaleBaseAsset:maleBaseAsset;
+ const asset=forcedAsset||(baseAsset&&ualAnimationAsset?{scene:baseAsset.scene,animations:ualAnimationAsset.animations}:characterAsset);
+ if(!asset)return null;
+ const root=SkeletonUtils.clone(asset.scene);
  const box3=new THREE.Box3().setFromObject(root),height=Math.max(.01,box3.max.y-box3.min.y);
  root.scale.setScalar(1.82/height);
  root.position.y=-box3.min.y*root.scale.y;
  root.traverse(o=>{if(o.isMesh||o.isSkinnedMesh){o.castShadow=true;o.receiveShadow=true;o.frustumCulled=false;const mats=Array.isArray(o.material)?o.material:[o.material];for(const old of mats){const mat=old.clone();if(mat.color){const n=old.name.toLowerCase();if(n.includes('swat')||n.includes('grey')||n.includes('cloth')||n.includes('body'))mat.color.lerp(new THREE.Color(spec.body),.34);else if(n.includes('black'))mat.color.lerp(new THREE.Color(spec.body),.12);else if(n.includes('visor')||n.includes('accent'))mat.color.lerp(new THREE.Color(spec.accent),.4);}if(mat.roughness!==undefined)mat.roughness=.68;o.material=Array.isArray(o.material)?o.material.map(m=>m===old?mat:m):mat;}}});
  const mixer=new THREE.AnimationMixer(root),actions={},allActions={};
- for(const clip of characterAsset.animations||[]){
+ for(const clip of asset.animations||[]){
   const action=mixer.clipAction(clip),n=clip.name.toLowerCase().replace(/[^a-z0-9]+/g,'_').replace(/^_|_$/g,'');
   allActions[clip.name]=action;actions[n]=action;
   const key=n.includes('idle')?'idle':n.includes('walk')?'walk':n.includes('sprint')||n.includes('run')?'run':n.includes('jump')?'jump':n.includes('shoot')||n.includes('fire')?'shoot':n.includes('reload')?'reload':n.includes('death')?'death':n.includes('crouch')?'crouch':n.includes('swim')?'swim':n.includes('roll')?'roll':n.includes('interact')?'interact':n.includes('hit')?'hit':n.includes('punch')?'punch':null;
@@ -40,7 +42,7 @@ function makeRigCharacter(skinId){
  root.userData={...root.userData,animMixer:mixer,animActions:actions,allAnimActions:allActions,availableAnimations:Object.keys(allActions),activeAction:initial,animState:'idle',skinId};
  return root;
 }
-function makeSoldierCharacter(skinId){if(!soldierAsset)return null;const previous=characterAsset;characterAsset=soldierAsset;const model=makeRigCharacter(skinId);characterAsset=previous;return model;}
+function makeSoldierCharacter(skinId){return soldierAsset?makeRigCharacter(skinId,soldierAsset):null;}
 async function loadCharacterAssets(){
  if(characterLoadPromise)return characterLoadPromise;
  characterLoadPromise=(async()=>{try{
@@ -50,6 +52,17 @@ async function loadCharacterAssets(){
   if(player){const old=playerModel,newModel=makeRigCharacter(selectedSkin);if(newModel){if(old)player.remove(old);playerModel=newModel;player.add(newModel);}}
   for(const bot of bots){const next=makeRigCharacter(bot.userData.skinId||'bone');if(next){if(bot.userData.model)bot.remove(bot.userData.model);bot.userData.model=next;bot.add(next);}}
   toast('AUTHORED CHARACTER RIGS LOADED');
+  try{
+   const [male,female,ual]=await Promise.all([
+    loader.loadAsync('https://raw.githubusercontent.com/TKY-27/Xo-Beta/master/public/assets/models/characters/hero_male.gltf'),
+    loader.loadAsync('https://raw.githubusercontent.com/TKY-27/Xo-Beta/master/public/assets/models/characters/hero_female.gltf'),
+    loader.loadAsync('https://raw.githubusercontent.com/TKY-27/Xo-Beta/master/public/assets/models/characters/ual_standard.glb')
+   ]);
+   maleBaseAsset=male;femaleBaseAsset=female;ualAnimationAsset=ual;
+   const playerRig=makeRigCharacter(selectedSkin);if(playerRig){if(playerModel)player.remove(playerModel);playerModel=playerRig;player.add(playerRig);}
+   bots.forEach(bot=>{const next=makeRigCharacter(bot.userData.skinId||'bone');if(next){if(bot.userData.model)bot.remove(bot.userData.model);bot.userData.model=next;bot.add(next);}});
+   toast('MALE + FEMALE RIGS · 43 ANIMATION CLIPS LOADED');
+  }catch(e){console.warn('[RIFT] universal base rig or animation pack unavailable; authored SWAT rig retained',e);}
   try{
    soldierAsset=await loader.loadAsync('https://raw.githubusercontent.com/Hazzad123/fully-ai-arena-fps/main/client/public/models/characters/Character_Soldier.gltf');
    bots.forEach((bot,index)=>{if(index%2!==1)return;const next=makeSoldierCharacter(bot.userData.skinId||'vanguard');if(next){if(bot.userData.model)bot.remove(bot.userData.model);bot.userData.model=next;bot.add(next);bot.userData.characterSource='fps-soldier';}});
