@@ -1,6 +1,9 @@
 import * as THREE from 'three';
 const $=id=>document.getElementById(id),menu=$('menu'),game=$('game'),canvas=$('world');
-let selectedMode='Free Play',renderer,scene,camera,clock,player,playerModel,weapon,yaw=0,pitch=-.08,keys={},velocityY=0,grounded=true,sensitivity=1,health=100,elims=0,bots=[],buildItems=[],pointerLocked=false,gameStarted=false,lastFrame=performance.now(),frameCount=0,quality='High',performanceMode=false;
+let selectedMode='Free Play',selectedSkin=localStorage.getItem('rift-skin')||'bone',renderer,scene,camera,clock,player,playerModel,weapon,yaw=0,pitch=-.08,keys={},velocityY=0,grounded=true,sensitivity=1,health=100,elims=0,bots=[],buildItems=[],pointerLocked=false,gameStarted=false,lastFrame=performance.now(),frameCount=0,quality='High',performanceMode=false;
+const SKINS={bone:{name:'BONE REVENANT',body:0x333a43,accent:0xd8d9d4,skin:0xd9d8d1,style:'skull'},gilded:{name:'GILDED SENTINEL',body:0x80601e,accent:0xffd45a,skin:0xb98759,style:'gold'},arctic:{name:'ARCTIC STRIKE',body:0x536d80,accent:0xbfe8f3,skin:0xc99b7d,style:'standard'},neon:{name:'NEON PHANTOM',body:0x28233e,accent:0xd75bff,skin:0xb98772,style:'standard'}};
+document.querySelectorAll('.skin-card').forEach(card=>{if(card.dataset.skin===selectedSkin)card.classList.add('selected');card.addEventListener('click',()=>selectSkin(card.dataset.skin));});
+function selectSkin(id){if(!SKINS[id])return;selectedSkin=id;localStorage.setItem('rift-skin',id);document.querySelectorAll('.skin-card').forEach(c=>c.classList.toggle('selected',c.dataset.skin===id));if(player&&playerModel){player.remove(playerModel);const s=SKINS[id];playerModel=makeCharacter(s.body,s.accent,s.skin,s.style);player.add(playerModel);}toast(SKINS[id].name+' EQUIPPED');}
 const V=(x=0,y=0,z=0)=>new THREE.Vector3(x,y,z);
 document.querySelectorAll('.mode-card').forEach(card=>card.addEventListener('click',()=>{document.querySelectorAll('.mode-card').forEach(c=>c.classList.remove('selected'));card.classList.add('selected');selectedMode=card.dataset.mode;}));
 $('playBtn').onclick=()=>startGame(false);$('practiceBtn').onclick=()=>{selectedMode='Free Play';startGame(true);};$('leaveBtn').onclick=leaveGame;$('settingsBtn').onclick=openSettings;$('closeSettings').onclick=$('resumeBtn').onclick=closeSettings;
@@ -18,7 +21,7 @@ function rod(parent,a,b,r,mat){const d=b.clone().sub(a),m=new THREE.Mesh(new THR
 function startGame(quick){menu.classList.add('hidden');game.classList.remove('hidden');$('modeLabel').textContent=(quick?'FREE PLAY':selectedMode).toUpperCase();if(!gameStarted){initWorld();gameStarted=true;}else resetArena();$('hint').textContent='CLICK TO CAPTURE MOUSE · WASD MOVE · SPACE JUMP · Q/F/C/V BUILD · LEFT CLICK FIRE';animate();}
 function leaveGame(){if(document.pointerLockElement)document.exitPointerLock();game.classList.add('hidden');menu.classList.remove('hidden');}
 function setQuality(v){quality=v;if(renderer){renderer.shadowMap.enabled=v!=='Low';renderer.setPixelRatio(performanceMode?1:Math.min(devicePixelRatio,v==='Ultra'?2:v==='High'?1.5:1));}toast(v+' graphics quality');}
-function makeCharacter(primary,accent,skin=0xd5a27f){
+function makeCharacter(primary,accent,skin=0xd5a27f,style='standard'){
  const root=new THREE.Group(),cloth=material(primary,.82),trim=material(accent,.52,.12),dark=material(0x202832,.72),skinMat=material(skin,.78),boot=material(0x171d25,.6,.08);
  for(const s of [-1,1]){const x=s*.19;capsule(root,.115,.48,V(x,.53,0),dark);capsule(root,.13,.28,V(x,.25,.015),boot);box(root,[.28,.14,.38],[x,.12,.07],boot);
  const shoulder=V(s*.39,1.34,0),elbow=V(s*.48,.98,.03),wrist=V(s*.45,.76,.14);capsule(root,.15,.25,shoulder,trim);rod(root,shoulder,elbow,.105,cloth);capsule(root,.095,.2,elbow,dark);rod(root,elbow,wrist,.085,cloth);capsule(root,.095,.1,wrist,skinMat);box(root,[.13,.1,.12],[s*.45,.7,.15],dark);}
@@ -26,8 +29,17 @@ function makeCharacter(primary,accent,skin=0xd5a27f){
  for(const s of [-1,1])box(root,[.12,.18,.045],[s*.14,1.17,.27],material(0x82929b,.48,.22));
  box(root,[.54,.09,.24],[0,.83,0],dark);for(let i=0;i<3;i++)box(root,[.1,.13,.06],[-.16+i*.16,.82,.15],trim);
  capsule(root,.09,.1,V(0,1.43,0),skinMat);const head=new THREE.Mesh(new THREE.SphereGeometry(.19,18,14),skinMat);head.position.set(0,1.62,0);head.castShadow=true;root.add(head);
- const helmet=new THREE.Mesh(new THREE.SphereGeometry(.205,18,12,0,Math.PI*2,0,Math.PI*.62),trim);helmet.position.set(0,1.68,-.015);helmet.castShadow=true;root.add(helmet);
- box(root,[.27,.075,.19],[0,1.58,.12],dark);box(root,[.22,.045,.035],[0,1.61,.225],material(0x9be8f1,.25,.45,{emissive:0x17404b,emissiveIntensity:.5}));
+ if(style==='skull'){
+   const bone=material(0xe7e5d9,.85),socket=material(0x10151b,.95),eye=material(0xff4c3d,.25,.1,{emissive:0xff1d12,emissiveIntensity:1.2});
+   const mask=new THREE.Mesh(new THREE.SphereGeometry(.195,18,14),bone);mask.position.set(0,1.62,.055);mask.scale.set(1,.92,.78);root.add(mask);
+   for(const s of [-1,1]){const eyeSocket=new THREE.Mesh(new THREE.SphereGeometry(.052,12,10),socket);eyeSocket.position.set(s*.075,1.66,.206);root.add(eyeSocket);const glowEye=new THREE.Mesh(new THREE.SphereGeometry(.018,8,8),eye);glowEye.position.set(s*.075,1.66,.25);root.add(glowEye);}
+   box(root,[.11,.035,.035],[0,1.56,.22],socket);for(let i=0;i<4;i++)box(root,[.018,.045,.018],[-.045+i*.03,1.535,.235],bone);
+   const hood=new THREE.Mesh(new THREE.SphereGeometry(.22,16,12,0,Math.PI*2,0,Math.PI*.62),trim);hood.position.set(0,1.69,-.025);root.add(hood);
+ }else{
+   const helmet=new THREE.Mesh(new THREE.SphereGeometry(.205,18,12,0,Math.PI*2,0,Math.PI*.62),trim);helmet.position.set(0,1.68,-.015);helmet.castShadow=true;root.add(helmet);
+   box(root,[.27,.075,.19],[0,1.58,.12],dark);box(root,[.22,.045,.035],[0,1.61,.225],material(0x9be8f1,.25,.45,{emissive:0x17404b,emissiveIntensity:.5}));
+   if(style==='gold'){box(root,[.52,.07,.22],[0,1.39,0],trim);box(root,[.12,.28,.08],[-.31,1.22,.02],trim);box(root,[.12,.28,.08],[.31,1.22,.02],trim);}
+ }
  box(root,[.2,.36,.13],[0,1.08,-.19],dark);box(root,[.25,.16,.08],[0,1.24,-.25],trim);return root;
 }
 function makeRifle(parent){
@@ -47,7 +59,7 @@ function initWorld(){
  for(let i=-4;i<=4;i++)for(const z of [-32,32]){box(scene,[1.4,5,1.4],[i*8,2.5,z],material(0x35434a,.6,.18));box(scene,[1.55,.16,1.55],[i*8,5.05,z],material(0x9bdce4,.25,.35,{emissive:0x1d5660,emissiveIntensity:.35}));}
  for(let i=-3;i<=3;i++)for(let j=-3;j<=3;j++){if(Math.abs(i)<2&&Math.abs(j)<2)continue;const h=1.4+Math.random()*1.4;box(scene,[2.7,h,2.7],[i*9,h/2,j*9],material([0x52636b,0x687b7d,0x5b6a72][(i+j+12)%3],.8));box(scene,[2.75,.1,2.75],[i*9,h+.03,j*9],material(0x9baea9,.45,.2));}
  for(let i=0;i<18;i++){const h=12+Math.random()*15,m=new THREE.Mesh(new THREE.ConeGeometry(8+Math.random()*7,h,5),material(0x667f83,1));m.position.set((i-9)*17,h/2-1,-83-Math.random()*16);scene.add(m);}
- player=new THREE.Group();player.position.set(0,0,8);scene.add(player);playerModel=makeCharacter(0x263d49,0xc7f36b);player.add(playerModel);const rig=new THREE.Group();camera.add(rig);weapon=makeRifle(rig);
+ player=new THREE.Group();player.position.set(0,0,8);scene.add(player);{const s=SKINS[selectedSkin]||SKINS.bone;playerModel=makeCharacter(s.body,s.accent,s.skin,s.style);player.add(playerModel);}const rig=new THREE.Group();camera.add(rig);weapon=makeRifle(rig);
  clock=new THREE.Clock();spawnBots(5);window.addEventListener('resize',onResize);
  canvas.addEventListener('click',()=>{if(!$('settings').classList.contains('hidden'))return;canvas.requestPointerLock();});
  document.addEventListener('pointerlockchange',()=>{pointerLocked=document.pointerLockElement===canvas;$('hint').style.opacity=pointerLocked?'0':'1';});
