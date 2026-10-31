@@ -43,6 +43,7 @@ function equip(id){
   if(!profile.unlocked.includes(id))return;
   profile.equipped=id;localStorage.setItem('rift-skin',id);
   const card=document.querySelector('.skin-card[data-skin="'+id+'"]');if(card)card.click();
+  if(window.riftSetSkin)window.riftSetSkin(id);
   save();
 }
 function buy(id){
@@ -50,6 +51,7 @@ function buy(id){
   if(profile.coins<skin.price){notify('NOT ENOUGH RIFT COINS');return;}
   profile.coins-=skin.price;profile.unlocked.push(id);profile.equipped=id;
   const card=document.querySelector('.skin-card[data-skin="'+id+'"]');if(card)card.click();
+  if(window.riftSetSkin)window.riftSetSkin(id);
   save();notify(skin.name+' UNLOCKED');
 }
 function notify(msg){let n=$('riftNotice');if(!n){n=document.createElement('div');n.id='riftNotice';document.body.append(n);}n.textContent=msg;n.classList.add('show');clearTimeout(notify.timer);notify.timer=setTimeout(()=>n.classList.remove('show'),1800);}
