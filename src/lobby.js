@@ -4,7 +4,19 @@ const SKINS = [
   { id:'bone', name:'BONE REVENANT', rarity:'Starter', price:0, mark:'☠', color:'#d7d5c8', desc:'Night patrol operative' },
   { id:'gilded', name:'GILDED SENTINEL', rarity:'Rare', price:800, mark:'✦', color:'#e8bf55', desc:'Gold-series guardian' },
   { id:'arctic', name:'ARCTIC STRIKE', rarity:'Rare', price:650, mark:'❄', color:'#a9e6f5', desc:'Cold-front specialist' },
-  { id:'neon', name:'NEON PHANTOM', rarity:'Epic', price:1200, mark:'✧', color:'#e58bff', desc:'After-hours infiltrator' }
+  { id:'neon', name:'NEON PHANTOM', rarity:'Epic', price:1200, mark:'✧', color:'#e58bff', desc:'After-hours infiltrator' },
+  { id:'vanguard', name:'VANGUARD', rarity:'Rare', price:700, mark:'⬟', color:'#e9b85d', desc:'Armored frontline specialist' },
+  { id:'pathfinder', name:'PATHFINDER', rarity:'Uncommon', price:450, mark:'⌖', color:'#7de0c0', desc:'Field reconnaissance operative' },
+  { id:'specter', name:'SPECTER', rarity:'Epic', price:1100, mark:'◈', color:'#9c7cff', desc:'Low-profile night operator' },
+  { id:'striker', name:'STRIKER', rarity:'Rare', price:750, mark:'✹', color:'#ff806c', desc:'Close-quarters combatant' },
+  { id:'warden', name:'WARDEN', rarity:'Rare', price:850, mark:'⬢', color:'#d6e890', desc:'Heavy defense specialist' },
+  { id:'nova', name:'NOVA', rarity:'Epic', price:1250, mark:'✧', color:'#66d8ff', desc:'Experimental energy suit' },
+  { id:'seraph', name:'SERAPH', rarity:'Legendary', price:1600, mark:'✦', color:'#ffedb0', desc:'Ceremonial gold armor' },
+  { id:'corsair', name:'CORSAIR', rarity:'Uncommon', price:500, mark:'⚓', color:'#53e0d8', desc:'Coastal operations gear' },
+  { id:'vesper', name:'VESPER', rarity:'Epic', price:1150, mark:'☾', color:'#ff9ec2', desc:'Crimson stealth suit' },
+  { id:'dragoon', name:'DRAGOON', rarity:'Legendary', price:1500, mark:'♜', color:'#ff9d3c', desc:'Veteran assault armor' },
+  { id:'tempest', name:'TEMPEST', rarity:'Rare', price:900, mark:'ϟ', color:'#8abfff', desc:'Storm response operative' },
+  { id:'reaper', name:'REAPER', rarity:'Legendary', price:1750, mark:'☠', color:'#e84040', desc:'Elite shadow combatant' }
 ];
 const MODES = [
   {name:'FREE PLAY',sub:'Warm up against bots',icon:'⌖',mode:'Free Play'},
@@ -90,6 +102,7 @@ function render(){
   content.querySelectorAll('[data-buy]').forEach(b=>b.addEventListener('click',()=>buy(b.dataset.buy)));
   content.querySelectorAll('[data-goto]').forEach(b=>b.addEventListener('click',()=>setTab(b.dataset.goto)));
 }
+window.riftSetSkin=(id)=>{if(window.riftApplySkin)window.riftApplySkin(id);};
 function init(){
   if(!$('menu')||$('metaLobby'))return;
   shell();render();
