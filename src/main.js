@@ -55,6 +55,7 @@ function updateRigAnimation(model,moving,dt,jumping,aiming){
  data.animMixer.update(dt);return true;
 }
 function selectSkin(id){if(!SKINS[id])return;selectedSkin=id;localStorage.setItem('rift-skin',id);document.querySelectorAll('.skin-card').forEach(c=>c.classList.toggle('selected',c.dataset.skin===id));if(player&&playerModel){player.remove(playerModel);playerModel=makeRigCharacter(id)||makeCharacter(SKINS[id].body,SKINS[id].accent,SKINS[id].skin,SKINS[id].style);player.add(playerModel);}toast(SKINS[id].name+' EQUIPPED');}
+window.riftApplySkin=selectSkin;
 const V=(x=0,y=0,z=0)=>new THREE.Vector3(x,y,z);
 document.querySelectorAll('.mode-card').forEach(card=>card.addEventListener('click',()=>{document.querySelectorAll('.mode-card').forEach(c=>c.classList.remove('selected'));card.classList.add('selected');selectedMode=card.dataset.mode;}));
 $('playBtn').onclick=()=>startGame(false);$('practiceBtn').onclick=()=>{selectedMode='Free Play';startGame(true);};$('leaveBtn').onclick=leaveGame;$('settingsBtn').onclick=openSettings;$('closeSettings').onclick=$('resumeBtn').onclick=closeSettings;
