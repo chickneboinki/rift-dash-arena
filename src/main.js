@@ -1,9 +1,43 @@
 import * as THREE from 'three';
+import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+import * as SkeletonUtils from 'three/addons/utils/SkeletonUtils.js';
 const $=id=>document.getElementById(id),menu=$('menu'),game=$('game'),canvas=$('world');
-let selectedMode='Free Play',selectedSkin=localStorage.getItem('rift-skin')||'bone',renderer,scene,camera,clock,player,playerModel,weapon,yaw=0,pitch=-.08,keys={},velocityY=0,grounded=true,sensitivity=1,health=100,elims=0,bots=[],buildItems=[],buildGhost=null,buildType='WALL',buildMode=false,buildRotation=0,pointerLocked=false,gameStarted=false,lastFrame=performance.now(),frameCount=0,quality='High',performanceMode=false;
+let selectedMode='Free Play',selectedSkin=localStorage.getItem('rift-skin')||'bone',renderer,scene,camera,clock,player,playerModel,weapon,yaw=0,pitch=-.08,keys={},velocityY=0,grounded=true,sensitivity=1,health=100,elims=0,bots=[],buildItems=[],buildGhost=null,buildType='WALL',buildMode=false,buildRotation=0,pointerLocked=false,gameStarted=false,lastFrame=performance.now(),frameCount=0,quality='High',performanceMode=false,characterAsset=null,characterLoadPromise=null;
 const SKINS={bone:{name:'BONE REVENANT',body:0x333a43,accent:0xd8d9d4,skin:0xd9d8d1,style:'skull'},gilded:{name:'GILDED SENTINEL',body:0x80601e,accent:0xffd45a,skin:0xb98759,style:'gold'},arctic:{name:'ARCTIC STRIKE',body:0x536d80,accent:0xbfe8f3,skin:0xc99b7d,style:'arctic'},neon:{name:'NEON PHANTOM',body:0x28233e,accent:0xd75bff,skin:0xb98772,style:'neon'}};
 document.querySelectorAll('.skin-card').forEach(card=>{if(card.dataset.skin===selectedSkin)card.classList.add('selected');card.addEventListener('click',()=>selectSkin(card.dataset.skin));});
-function selectSkin(id){if(!SKINS[id])return;selectedSkin=id;localStorage.setItem('rift-skin',id);document.querySelectorAll('.skin-card').forEach(c=>c.classList.toggle('selected',c.dataset.skin===id));if(player&&playerModel){player.remove(playerModel);const s=SKINS[id];playerModel=makeCharacter(s.body,s.accent,s.skin,s.style);player.add(playerModel);}toast(SKINS[id].name+' EQUIPPED');}
+function makeRigCharacter(skinId){
+ if(!characterAsset)return null;
+ const spec=SKINS[skinId]||SKINS.bone,root=SkeletonUtils.clone(characterAsset.scene);
+ const box3=new THREE.Box3().setFromObject(root),height=Math.max(.01,box3.max.y-box3.min.y);
+ root.scale.setScalar(1.82/height);
+ root.position.y=-box3.min.y*root.scale.y;
+ root.traverse(o=>{if(o.isMesh||o.isSkinnedMesh){o.castShadow=true;o.receiveShadow=true;o.frustumCulled=false;const mats=Array.isArray(o.material)?o.material:[o.material];for(const old of mats){const mat=old.clone();if(mat.color){const n=old.name.toLowerCase();if(n.includes('swat')||n.includes('grey')||n.includes('cloth')||n.includes('body'))mat.color.lerp(new THREE.Color(spec.body),.34);else if(n.includes('black'))mat.color.lerp(new THREE.Color(spec.body),.12);else if(n.includes('visor')||n.includes('accent'))mat.color.lerp(new THREE.Color(spec.accent),.4);}if(mat.roughness!==undefined)mat.roughness=.68;o.material=Array.isArray(o.material)?o.material.map(m=>m===old?mat:m):mat;}}});
+ const mixer=new THREE.AnimationMixer(root),actions={};
+ for(const clip of characterAsset.animations||[]){const n=clip.name.toLowerCase();let key=null;if(n.includes('idle'))key='idle';else if(n.includes('walk'))key='walk';else if(n.includes('sprint')||n.includes('run'))key='run';else if(n.includes('jump'))key='jump';else if(n.includes('shoot')||n.includes('fire'))key='shoot';else if(n.includes('reload'))key='reload';else if(n.includes('death'))key='death';if(key&&!actions[key])actions[key]=mixer.clipAction(clip);}
+ const initial=actions.idle||actions.walk||Object.values(actions)[0];if(initial){initial.play();root.userData.activeAction=initial;}
+ root.userData={...root.userData,animMixer:mixer,animActions:actions,activeAction:initial,animState:'idle',skinId};
+ return root;
+}
+async function loadCharacterAssets(){
+ if(characterLoadPromise)return characterLoadPromise;
+ characterLoadPromise=(async()=>{try{
+  const loader=new GLTFLoader();
+  const gltf=await loader.loadAsync('https://raw.githubusercontent.com/TKY-27/Xo-Beta/master/public/assets/models/characters/swat-modular.glb');
+  characterAsset=gltf;
+  if(player){const old=playerModel,newModel=makeRigCharacter(selectedSkin);if(newModel){if(old)player.remove(old);playerModel=newModel;player.add(newModel);}}
+  for(const bot of bots){const next=makeRigCharacter(bot.userData.skinId||'bone');if(next){if(bot.userData.model)bot.remove(bot.userData.model);bot.userData.model=next;bot.add(next);}}
+  toast('AUTHORED CHARACTER RIGS LOADED');
+ }catch(e){console.warn('[RIFT] authored character model unavailable; procedural rig retained',e);}})();
+ return characterLoadPromise;
+}
+function updateRigAnimation(model,moving,dt,jumping,aiming){
+ const data=model.userData;if(!data.animMixer)return false;
+ const actions=data.animActions||{},wanted=jumping?(actions.jump?'jump':'idle'):moving?(aiming&&actions.shoot?'shoot':actions.run?'run':'walk'):'idle';
+ const next=actions[wanted]||actions.idle||actions.walk||Object.values(actions)[0];
+ if(next&&next!==data.activeAction){next.reset().fadeIn(.18).play();if(data.activeAction)data.activeAction.fadeOut(.18);data.activeAction=next;data.animState=wanted;}
+ data.animMixer.update(dt);return true;
+}
+function selectSkin(id){if(!SKINS[id])return;selectedSkin=id;localStorage.setItem('rift-skin',id);document.querySelectorAll('.skin-card').forEach(c=>c.classList.toggle('selected',c.dataset.skin===id));if(player&&playerModel){player.remove(playerModel);playerModel=makeRigCharacter(id)||makeCharacter(SKINS[id].body,SKINS[id].accent,SKINS[id].skin,SKINS[id].style);player.add(playerModel);}toast(SKINS[id].name+' EQUIPPED');}
 const V=(x=0,y=0,z=0)=>new THREE.Vector3(x,y,z);
 document.querySelectorAll('.mode-card').forEach(card=>card.addEventListener('click',()=>{document.querySelectorAll('.mode-card').forEach(c=>c.classList.remove('selected'));card.classList.add('selected');selectedMode=card.dataset.mode;}));
 $('playBtn').onclick=()=>startGame(false);$('practiceBtn').onclick=()=>{selectedMode='Free Play';startGame(true);};$('leaveBtn').onclick=leaveGame;$('settingsBtn').onclick=openSettings;$('closeSettings').onclick=$('resumeBtn').onclick=closeSettings;
@@ -173,7 +207,8 @@ function makeCharacter(primary,accent,skin=0xd5a27f,style='standard'){
  return root;
 }
 function animateCharacter(model,moving,dt,jumping,onGround,aiming=false,sprinting=false){
- if(!model?.userData?.rig)return;
+ if(!model)return;if(updateRigAnimation(model,moving,dt,jumping,aiming))return;
+ if(!model.userData?.rig)return;
  const r=model.userData.rig;
  r.idlePhase+=dt*(moving?(sprinting?13:9):2.15);
  const phase=r.idlePhase, stride=moving?(sprinting?1.12:.76):0;
@@ -287,7 +322,7 @@ function initWorld(){
  player=new THREE.Group();player.position.set(-5,terrainHeight(-5,8)+.25,8);scene.add(player);
  {const s=SKINS[selectedSkin]||SKINS.bone;playerModel=makeCharacter(s.body,s.accent,s.skin,s.style);player.add(playerModel);}
  const rig=new THREE.Group();camera.add(rig);weapon=makeRifle(rig);
- clock=new THREE.Clock();spawnBots(modeBotCount());window.addEventListener('resize',onResize);
+ clock=new THREE.Clock();spawnBots(modeBotCount());loadCharacterAssets();window.addEventListener('resize',onResize);
  canvas.addEventListener('click',()=>{if(!$('settings').classList.contains('hidden'))return;canvas.requestPointerLock();});
  document.addEventListener('pointerlockchange',()=>{pointerLocked=document.pointerLockElement===canvas;$('hint').style.opacity=pointerLocked?'0':'1';});
  document.addEventListener('mousemove',e=>{if(!pointerLocked)return;yaw-=e.movementX*.0019*sensitivity;pitch-=e.movementY*.0019*sensitivity;pitch=Math.max(-.65,Math.min(.45,pitch));});
@@ -299,7 +334,7 @@ function initWorld(){
 function onResize(){if(!renderer)return;camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix();renderer.setSize(innerWidth,innerHeight);}
 function updateCamera(){const target=player.position.clone().add(V(0,1.35,0)),d=5.4,h=Math.cos(pitch)*d;camera.position.set(target.x+Math.sin(yaw)*h,target.y+Math.sin(pitch)*d+1.1,target.z+Math.cos(yaw)*h);camera.lookAt(target.clone().add(V(-Math.sin(yaw)*3,Math.sin(pitch)*3,-Math.cos(yaw)*3)));}
 function modeBotCount(){return ({'Creative':0,'1v1':1,'2v2':3,'Box Fights':3,'Zone Wars':5,'Free Play':7})[selectedMode]??5;}
-function spawnBots(n){const palette=[[0x9a4f42,0xffb46b,0xb98262,'standard'],[0x314f79,0x79c9ed,0xb98262,'standard'],[0x66517e,0xd6a4ed,0x9a694e,'skull'],[0x6c7542,0xd6e66e,0x9b765e,'arctic'],[0x80601e,0xffd45a,0xb98759,'gold'],[0x26343b,0x8ce5ec,0xc99b7d,'neon']];for(let i=0;i<n;i++){const [body,accent,skin,style]=palette[i%palette.length],bot=new THREE.Group(),model=makeCharacter(body,accent,skin,style);bot.add(model);const bx=player.position.x+(Math.random()-.5)*42,bz=player.position.z-12-Math.random()*35;bot.position.set(bx,terrainHeight(bx,bz)+.25,bz);bot.userData={hp:100,phase:Math.random()*6,model};scene.add(bot);bots.push(bot);}}
+function spawnBots(n){const palette=[[0x9a4f42,0xffb46b,0xb98262,'standard'],[0x314f79,0x79c9ed,0xb98262,'standard'],[0x66517e,0xd6a4ed,0x9a694e,'skull'],[0x6c7542,0xd6e66e,0x9b765e,'arctic'],[0x80601e,0xffd45a,0xb98759,'gold'],[0x26343b,0x8ce5ec,0xc99b7d,'neon']];for(let i=0;i<n;i++){const [body,accent,skin,style]=palette[i%palette.length],bot=new THREE.Group(),skinId=['bone','arctic','neon','gilded'][i%4],model=makeRigCharacter(skinId)||makeCharacter(body,accent,skin,style);bot.add(model);const bx=player.position.x+(Math.random()-.5)*42,bz=player.position.z-12-Math.random()*35;bot.position.set(bx,terrainHeight(bx,bz)+.25,bz);bot.userData={hp:100,phase:Math.random()*6,model,skinId};scene.add(bot);bots.push(bot);}}
 function resetArena(){clearBuildGhost();buildMode=false;buildRotation=0;player.position.set(-5,terrainHeight(-5,8)+.25,8);yaw=0;pitch=-.08;velocityY=0;health=100;$('healthNum').textContent='100';$('healthBar').style.width='100%';elims=0;$('elims').textContent='0';buildItems.forEach(o=>scene.remove(o));buildItems=[];bots.forEach(b=>scene.remove(b));bots=[];spawnBots(modeBotCount());}
 function buildMaterial(){return material(0xb4d9e2,.32,.28,{transparent:true,opacity:.88,side:THREE.DoubleSide});}
 function makeBuildPiece(type,position,rotation){
