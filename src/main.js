@@ -2,7 +2,7 @@ import * as THREE from 'three';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import * as SkeletonUtils from 'three/addons/utils/SkeletonUtils.js';
 const $=id=>document.getElementById(id),menu=$('menu'),game=$('game'),canvas=$('world');
-let selectedMode='Free Play',selectedSkin=localStorage.getItem('rift-skin')||'bone',renderer,scene,camera,clock,player,playerModel,weapon,yaw=0,pitch=-.08,keys={},velocityY=0,grounded=true,sensitivity=1,health=100,elims=0,bots=[],buildItems=[],buildGhost=null,buildType='WALL',buildMode=false,buildRotation=0,buildMaterialIndex=0,pointerLocked=false,gameStarted=false,lastFrame=performance.now(),frameCount=0,quality='High',performanceMode=false,characterAsset=null,characterLoadPromise=null;
+let selectedMode='Free Play',selectedSkin=localStorage.getItem('rift-skin')||'bone',renderer,scene,camera,clock,player,playerModel,weapon,yaw=0,pitch=-.08,keys={},velocityY=0,grounded=true,sensitivity=1,health=100,elims=0,bots=[],buildItems=[],buildGhost=null,buildType='WALL',buildMode=false,buildRotation=0,buildMaterialIndex=0,pointerLocked=false,gameStarted=false,lastFrame=performance.now(),frameCount=0,quality='High',performanceMode=false,characterAsset=null,soldierAsset=null,characterLoadPromise=null;
 const SKINS={
  bone:{name:'BONE REVENANT',body:0x333a43,accent:0xd8d9d4,skin:0xd9d8d1,style:'skull'},
  gilded:{name:'GILDED SENTINEL',body:0x80601e,accent:0xffd45a,skin:0xb98759,style:'gold'},
@@ -35,6 +35,7 @@ function makeRigCharacter(skinId){
  root.userData={...root.userData,animMixer:mixer,animActions:actions,activeAction:initial,animState:'idle',skinId};
  return root;
 }
+function makeSoldierCharacter(skinId){if(!soldierAsset)return null;const previous=characterAsset;characterAsset=soldierAsset;const model=makeRigCharacter(skinId);characterAsset=previous;return model;}
 async function loadCharacterAssets(){
  if(characterLoadPromise)return characterLoadPromise;
  characterLoadPromise=(async()=>{try{
@@ -44,6 +45,12 @@ async function loadCharacterAssets(){
   if(player){const old=playerModel,newModel=makeRigCharacter(selectedSkin);if(newModel){if(old)player.remove(old);playerModel=newModel;player.add(newModel);}}
   for(const bot of bots){const next=makeRigCharacter(bot.userData.skinId||'bone');if(next){if(bot.userData.model)bot.remove(bot.userData.model);bot.userData.model=next;bot.add(next);}}
   toast('AUTHORED CHARACTER RIGS LOADED');
+  try{
+   soldierAsset=await loader.loadAsync('https://raw.githubusercontent.com/Hazzad123/fully-ai-arena-fps/main/client/public/models/characters/Character_Soldier.gltf');
+   bots.forEach((bot,index)=>{if(index%2!==1)return;const next=makeSoldierCharacter(bot.userData.skinId||'vanguard');if(next){if(bot.userData.model)bot.remove(bot.userData.model);bot.userData.model=next;bot.add(next);bot.userData.characterSource='fps-soldier';}});
+   toast('SECOND CHARACTER ARCHETYPE LOADED');
+  }catch(e){console.warn('[RIFT] secondary soldier model unavailable; SWAT rigs remain active',e);}
+
  }catch(e){console.warn('[RIFT] authored character model unavailable; procedural rig retained',e);}})();
  return characterLoadPromise;
 }
