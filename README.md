@@ -16,7 +16,8 @@ npm run dev
 - Sixteen original outfit presets, including the Xo Beta character palette roster, with unlock/equip flow
 - Rift Coins wallet, cosmetic purchases, and elimination rewards
 - Third-person movement, mouse aiming, and bot target practice
-- Authored skinned SWAT character model loaded from Xo Beta (Quaternius CC0) with its bundled animation clips and crossfaded idle, walk/run, jump and action states
+- Authored skinned SWAT character model loaded from Xo Beta (Quaternius CC0), retaining all bundled animation clips and crossfading idle, walk/run, jump and action states
+- Secondary Quaternius soldier GLTF model from the FPS repo is loaded as an alternate bot archetype when its upstream asset is available
 - Grid-snapped wall, floor, ramp, and pyramid placement with a raycast placement preview
 - Wood, stone, and metal build tiers with separate durability, rotation, tile edits, and scroll-wheel edit reset
 - Settings for sensitivity, FOV, graphics quality, and performance mode
