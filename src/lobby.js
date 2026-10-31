@@ -94,7 +94,7 @@ function init(){
   if(!$('menu')||$('metaLobby'))return;
   shell();render();
   const elims=$('elims');
-  if(elims)new MutationObserver(()=>{const n=Number(elims.textContent)||0;if(n>profile.elims){profile.coins+=(n-profile.elims)*25;profile.elims=n;save();notify('+25 RIFT COINS · ELIMINATION');}}).observe(elims,{childList:true,characterData:true,subtree:true});
+  if(elims){let last=Number(elims.textContent)||0;new MutationObserver(()=>{const n=Number(elims.textContent)||0;if(n>last){const gained=n-last;profile.coins+=gained*25;profile.elims+=gained;save();notify('+'+(gained*25)+' RIFT COINS · ELIMINATION');}last=n;}).observe(elims,{childList:true,characterData:true,subtree:true});}
   window.addEventListener('storage',e=>{if(e.key===STORAGE){profile=loadProfile();render();}});
 }
 init();
