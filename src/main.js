@@ -29,10 +29,15 @@ function makeRigCharacter(skinId){
  root.scale.setScalar(1.82/height);
  root.position.y=-box3.min.y*root.scale.y;
  root.traverse(o=>{if(o.isMesh||o.isSkinnedMesh){o.castShadow=true;o.receiveShadow=true;o.frustumCulled=false;const mats=Array.isArray(o.material)?o.material:[o.material];for(const old of mats){const mat=old.clone();if(mat.color){const n=old.name.toLowerCase();if(n.includes('swat')||n.includes('grey')||n.includes('cloth')||n.includes('body'))mat.color.lerp(new THREE.Color(spec.body),.34);else if(n.includes('black'))mat.color.lerp(new THREE.Color(spec.body),.12);else if(n.includes('visor')||n.includes('accent'))mat.color.lerp(new THREE.Color(spec.accent),.4);}if(mat.roughness!==undefined)mat.roughness=.68;o.material=Array.isArray(o.material)?o.material.map(m=>m===old?mat:m):mat;}}});
- const mixer=new THREE.AnimationMixer(root),actions={};
- for(const clip of characterAsset.animations||[]){const n=clip.name.toLowerCase();let key=null;if(n.includes('idle'))key='idle';else if(n.includes('walk'))key='walk';else if(n.includes('sprint')||n.includes('run'))key='run';else if(n.includes('jump'))key='jump';else if(n.includes('shoot')||n.includes('fire'))key='shoot';else if(n.includes('reload'))key='reload';else if(n.includes('death'))key='death';if(key&&!actions[key])actions[key]=mixer.clipAction(clip);}
- const initial=actions.idle||actions.walk||Object.values(actions)[0];if(initial){initial.play();root.userData.activeAction=initial;}
- root.userData={...root.userData,animMixer:mixer,animActions:actions,activeAction:initial,animState:'idle',skinId};
+ const mixer=new THREE.AnimationMixer(root),actions={},allActions={};
+ for(const clip of characterAsset.animations||[]){
+  const action=mixer.clipAction(clip),n=clip.name.toLowerCase().replace(/[^a-z0-9]+/g,'_').replace(/^_|_$/g,'');
+  allActions[clip.name]=action;actions[n]=action;
+  const key=n.includes('idle')?'idle':n.includes('walk')?'walk':n.includes('sprint')||n.includes('run')?'run':n.includes('jump')?'jump':n.includes('shoot')||n.includes('fire')?'shoot':n.includes('reload')?'reload':n.includes('death')?'death':n.includes('crouch')?'crouch':n.includes('swim')?'swim':n.includes('roll')?'roll':n.includes('interact')?'interact':n.includes('hit')?'hit':n.includes('punch')?'punch':null;
+  if(key&&!actions[key])actions[key]=action;
+ }
+ const initial=actions.idle||actions.idle_loop||actions.walk||Object.values(allActions)[0];if(initial)initial.play();
+ root.userData={...root.userData,animMixer:mixer,animActions:actions,allAnimActions:allActions,availableAnimations:Object.keys(allActions),activeAction:initial,animState:'idle',skinId};
  return root;
 }
 function makeSoldierCharacter(skinId){if(!soldierAsset)return null;const previous=characterAsset;characterAsset=soldierAsset;const model=makeRigCharacter(skinId);characterAsset=previous;return model;}
