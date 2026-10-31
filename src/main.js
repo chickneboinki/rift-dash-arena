@@ -384,9 +384,9 @@ function makeBuildPiece(type,position,rotation,matIndex=buildMaterialIndex){
   for(let i=0;i<4;i++){add([.055,.04,3],[-1.125+i*.75,.09,0],accent);add([3,.04,.055],[0,.095,-1.125+i*.75],accent);}
   for(let x=0;x<3;x++)for(let z=0;z<3;z++){const tile=add([.91,.045,.91],[-.96+x*.96,.1,-.96+z*.96],panel);tile.userData.editTile=true;tile.userData.baseMaterial=panel;}
  }else if(type==='RAMP'){
-  const ramp=new THREE.Group();ramp.rotation.x=-Math.PI/5;root.add(ramp);
-  for(let i=0;i<7;i++)box(ramp,[3,.13,.42],[0,i*.24,-1.26+i*.42],panel);
-  for(const x of [-1.4,1.4])box(ramp,[.14,.16,3],[x,.68,0],frame);
+  const slope=new THREE.Mesh(makeRampGeometry(),panel);slope.castShadow=true;slope.receiveShadow=true;root.add(slope);
+  for(const x of [-1.4,1.4]){const rail=box(root,[.14,.16,3],[x,0,0],frame);rail.rotation.x=-Math.PI/5;}
+  for(let i=0;i<6;i++)box(root,[2.78,.07,.055],[0,-1.25+i*.48,1.15-i*.46],accent);
  }else if(type==='PYRAMID'){
   const pyramid=new THREE.Mesh(new THREE.CylinderGeometry(0,3*.707,3,4,1),panel);pyramid.rotation.y=Math.PI/4;pyramid.position.y=.65;pyramid.castShadow=true;pyramid.receiveShadow=true;root.add(pyramid);
   for(let i=0;i<4;i++){const beam=box(root,[.12,2.05,.12],[0,.55,0],frame);beam.rotation.y=i*Math.PI/2;beam.rotation.z=Math.PI/4;}
