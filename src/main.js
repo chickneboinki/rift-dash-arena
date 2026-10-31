@@ -1,7 +1,7 @@
 import * as THREE from 'three';
 const $=id=>document.getElementById(id),menu=$('menu'),game=$('game'),canvas=$('world');
 let selectedMode='Free Play',selectedSkin=localStorage.getItem('rift-skin')||'bone',renderer,scene,camera,clock,player,playerModel,weapon,yaw=0,pitch=-.08,keys={},velocityY=0,grounded=true,sensitivity=1,health=100,elims=0,bots=[],buildItems=[],pointerLocked=false,gameStarted=false,lastFrame=performance.now(),frameCount=0,quality='High',performanceMode=false;
-const SKINS={bone:{name:'BONE REVENANT',body:0x333a43,accent:0xd8d9d4,skin:0xd9d8d1,style:'skull'},gilded:{name:'GILDED SENTINEL',body:0x80601e,accent:0xffd45a,skin:0xb98759,style:'gold'},arctic:{name:'ARCTIC STRIKE',body:0x536d80,accent:0xbfe8f3,skin:0xc99b7d,style:'standard'},neon:{name:'NEON PHANTOM',body:0x28233e,accent:0xd75bff,skin:0xb98772,style:'standard'}};
+const SKINS={bone:{name:'BONE REVENANT',body:0x333a43,accent:0xd8d9d4,skin:0xd9d8d1,style:'skull'},gilded:{name:'GILDED SENTINEL',body:0x80601e,accent:0xffd45a,skin:0xb98759,style:'gold'},arctic:{name:'ARCTIC STRIKE',body:0x536d80,accent:0xbfe8f3,skin:0xc99b7d,style:'arctic'},neon:{name:'NEON PHANTOM',body:0x28233e,accent:0xd75bff,skin:0xb98772,style:'neon'}};
 document.querySelectorAll('.skin-card').forEach(card=>{if(card.dataset.skin===selectedSkin)card.classList.add('selected');card.addEventListener('click',()=>selectSkin(card.dataset.skin));});
 function selectSkin(id){if(!SKINS[id])return;selectedSkin=id;localStorage.setItem('rift-skin',id);document.querySelectorAll('.skin-card').forEach(c=>c.classList.toggle('selected',c.dataset.skin===id));if(player&&playerModel){player.remove(playerModel);const s=SKINS[id];playerModel=makeCharacter(s.body,s.accent,s.skin,s.style);player.add(playerModel);}toast(SKINS[id].name+' EQUIPPED');}
 const V=(x=0,y=0,z=0)=>new THREE.Vector3(x,y,z);
@@ -85,6 +85,18 @@ function makeCharacter(primary,accent,skin=0xd5a27f,style='standard'){
   cube(head,[.17,.05,.04],[0,-.11,.195],black);
   for(let i=0;i<5;i++)cube(head,[.022,.04,.022],[-.055+i*.027,-.12,.22],bone);
   ball(head,.23,[0,.2,-.035],trim,[1.12,.58,1.12]);
+ }else if(style==='arctic'){
+  cube(head,[.34,.13,.09],[0,.045,.205],material(0xd9f2f5,.2,.4));
+  cube(head,[.29,.075,.07],[0,.06,.255],glow);
+  cube(head,[.25,.13,.12],[0,-.09,.13],dark);
+  for(const s of [-1,1]){cube(head,[.1,.23,.12],[s*.18,-.01,-.015],steel);mesh(head,new THREE.ConeGeometry(.09,.28,5),trim,[s*.22,.18,-.015],[1,1,1]);}
+  cube(head,[.38,.06,.12],[0,-.17,.13],trim);
+ }else if(style==='neon'){
+  cube(head,[.34,.16,.1],[0,.025,.205],dark);
+  for(const s of [-1,1]){cube(head,[.14,.09,.055],[s*.085,.04,.265],glow);ball(head,.025,[s*.085,.04,.3],material(0xff4fd8,.18,.3,{emissive:0xb50088,emissiveIntensity:1.2}));}
+  cube(head,[.19,.13,.11],[0,-.1,.16],trim);
+  for(const s of [-1,1]){mesh(head,new THREE.ConeGeometry(.075,.22,5),trim,[s*.19,.27,-.005]);cube(head,[.07,.2,.1],[s*.19,-.015,.13],glow);}
+  cube(head,[.42,.055,.1],[0,-.18,.08],glow);
  }else{
   cube(head,[.31,.12,.09],[0,.04,.205],glow);
   cube(head,[.34,.05,.075],[0,.1,.19],steel);
@@ -95,6 +107,8 @@ function makeCharacter(primary,accent,skin=0xd5a27f,style='standard'){
   mesh(head,new THREE.ConeGeometry(.12,.3,5),gold,[0,.38,-.005]);
   cube(head,[.46,.1,.2],[0,.27,-.01],gold);
  }
+ if(style==='arctic'){for(const s of [-1,1]){mesh(head,new THREE.ConeGeometry(.1,.34,6),steel,[s*.23,.27,-.04]);cube(head,[.13,.28,.11],[s*.31,.0,-.02],trim);}}
+ if(style==='neon'){for(const s of [-1,1]){mesh(head,new THREE.ConeGeometry(.1,.25,5),glow,[s*.24,.27,-.02]);cube(head,[.12,.3,.1],[s*.32,.02,0],trim);}}
  // Shoulder armor and articulated arms.
  const left=limb(torso,[-.43,.34,0],cloth,trim,-1),right=limb(torso,[.43,.34,0],cloth,trim,1);
  rig.leftArm=left;rig.rightArm=right;
